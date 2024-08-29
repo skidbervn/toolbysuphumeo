@@ -8,7 +8,7 @@ import getpass
 cron_file = 'cron.txt'
 
 # Mật khẩu để truy cập các chức năng của công cụ
-PASSWORD = 'succekvn'  # Thay đổi mật khẩu này theo yêu cầu
+PASSWORD = ''  # Thay đổi mật khẩu này theo yêu cầu
 
 def check_password():
     """Kiểm tra mật khẩu người dùng nhập vào."""
