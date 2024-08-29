@@ -8,7 +8,7 @@ import getpass
 cron_file = 'cron.txt'
 
 # Mật khẩu để truy cập các chức năng của công cụ
-PASSWORD = 'keyvip'  # Bạn có thể thay đổi mật khẩu này theo yêu cầu
+PASSWORD = 'your_secure_password'  # Thay đổi mật khẩu này theo yêu cầu
 
 def check_password():
     """Kiểm tra mật khẩu người dùng nhập vào."""
@@ -21,7 +21,11 @@ def create_cron():
         return
 
     url = input("Nhập URL cần chạy: ")
-    interval = int(input("Nhập số giây giữa các lần yêu cầu: "))
+    try:
+        interval = int(input("Nhập số giây giữa các lần yêu cầu: "))
+    except ValueError:
+        print("Vui lòng nhập số nguyên hợp lệ cho khoảng thời gian.")
+        return
     
     with open(cron_file, 'a') as file:
         file.write(f"{url} {interval}\n")
@@ -49,30 +53,41 @@ def start_cron():
     with open(cron_file, 'r') as file:
         cron_jobs = file.readlines()
 
+    if not cron_jobs:
+        print("Danh sách cron job trống.")
+        return
+
     threads = []
     for job in cron_jobs:
-        url, interval = job.strip().split()
-        interval = int(interval)
-        
-        print(f"Bắt đầu cron job với URL={url} và Interval={interval} giây")
-        
-        # Tạo và khởi động một luồng cho từng cron job
-        thread = threading.Thread(target=run_cron_job, args=(url, interval))
-        thread.daemon = True
-        thread.start()
-        threads.append(thread)
+        try:
+            url, interval = job.strip().split()
+            interval = int(interval)
+            
+            print(f"Bắt đầu cron job với URL={url} và Interval={interval} giây")
+            
+            # Tạo và khởi động một luồng cho từng cron job
+            thread = threading.Thread(target=run_cron_job, args=(url, interval))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        except ValueError:
+            print(f"Dòng cron job không hợp lệ: {job.strip()}")
 
     # Đợi cho tất cả các luồng hoàn thành (nếu cần thiết)
     for thread in threads:
         thread.join()
 
 def main():
+    print("Chương trình yêu cầu mật khẩu để tiếp tục.")
+    if not check_password():
+        print("Mật khẩu không chính xác. Thoát chương trình.")
+        return
+
     while True:
         print("\nChọn một tùy chọn:")
         print("[1] Create Cron")
         print("[2] Start Cron")
         print("[3] Exit")
-        print("[4] SỤC")
         
         choice = input("Nhập lựa chọn của bạn: ")
         
