@@ -1,105 +1,110 @@
 import time
-import requests
-import threading
+import import json
+import time
 import os
-import getpass
+from datetime import datetime
+import socket
 
-# Đường dẫn đến tệp chứa cron jobs
-cron_file = 'cron.txt'
+# Đổi màu cho các thông báo
+RED = "\033[91m"
+RESET = "\033[0m"
 
-# Mật khẩu để truy cập các chức năng của công cụ
-PASSWORD = 'suphumeodeptrai'  # Thay đổi mật khẩu này theo yêu cầu
+def clear_console():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-def check_password():
-    """Kiểm tra mật khẩu người dùng nhập vào."""
-    password = getpass.getpass(prompt='Nhập mật khẩu: ')
-    return password == PASSWORD
+def print_message(message, color=RESET):
+    print(f"{color}{message}{RESET}")
 
-def create_cron():
-    if not check_password():
-        print("Mật khẩu không chính xác.")
-        return
+def get_device_type():
+    return "PC" if os.name == 'nt' else "MOBILE"
 
-    url = input("Nhập URL cần chạy: ")
+def get_ip_address():
     try:
-        interval = int(input("Nhập số giây giữa các lần yêu cầu: "))
-    except ValueError:
-        print("Vui lòng nhập số nguyên hợp lệ cho khoảng thời gian.")
-        return
-    
-    with open(cron_file, 'a') as file:
-        file.write(f"{url} {interval}\n")
-    
-    print(f"Đã thêm cron job: URL={url}, Interval={interval} giây")
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = "Unavailable"
+    finally:
+        s.close()
+    return ip
 
-def run_cron_job(url, interval):
-    while True:
-        try:
-            response = requests.get(url)
-            print(f"Status Code: {response.status_code} - {url}")
-        except requests.RequestException as e:
-            print(f"Đã xảy ra lỗi: {e}")
-        time.sleep(interval)
+def get_local_time():
+    return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+def save_config(link, seconds, version):
+    config = {
+        'link': link,
+        'seconds': seconds,
+        'version': version
+    }
+    with open('config.json', 'w') as f:
+        json.dump(config, f)
+
+def load_config():
+    try:
+        with open('config.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+
+def create_cron(version):
+    link = input("LINK CẦN CHẠY: ")
+    seconds = int(input("SỐ GIÂY: "))
+    save_config(link, seconds, version)
+    print_message("Cron job created and saved in config.json")
+
+    # Hỏi người dùng nếu muốn chạy cron job ngay
+    run_now = input("Bạn muốn chạy ngay bây giờ không? (Nhấn Enter để chạy, hoặc nhập bất kỳ để thoát): ")
+    if run_now == "":
+        start_cron()
 
 def start_cron():
-    if not check_password():
-        print("Mật khẩu không chính xác.")
+    config = load_config()
+    if not config:
+        print_message("No cron job configuration found.")
         return
+    
+    link = config['link']
+    seconds = config['seconds']
+    
+    while True:
+        clear_console()
+        # Hiển thị thông tin thiết bị và thời gian
+        print_message(f"IP: {get_ip_address()}", RED)
+        print_message(f"Thời gian hiện tại: {get_local_time()}", RED)
+        print_message(f"Thiết bị: {get_device_type()}", RED)
 
-    if not os.path.exists(cron_file):
-        print("Tệp cron.txt không tồn tại. Hãy tạo một cron job trước.")
-        return
-
-    with open(cron_file, 'r') as file:
-        cron_jobs = file.readlines()
-
-    if not cron_jobs:
-        print("Danh sách cron job trống.")
-        return
-
-    threads = []
-    for job in cron_jobs:
-        try:
-            url, interval = job.strip().split()
-            interval = int(interval)
-            
-            print(f"Bắt đầu cron job với URL={url} và Interval={interval} giây")
-            
-            # Tạo và khởi động một luồng cho từng cron job
-            thread = threading.Thread(target=run_cron_job, args=(url, interval))
-            thread.daemon = True
-            thread.start()
-            threads.append(thread)
-        except ValueError:
-            print(f"Dòng cron job không hợp lệ: {job.strip()}")
-
-    # Đợi cho tất cả các luồng hoàn thành (nếu cần thiết)
-    for thread in threads:
-        thread.join()
+        # Đếm ngược thời gian
+        for remaining in range(seconds, 0, -1):
+            clear_console()
+            print_message(f"[SUPHUMEO] TRẠNG THÁI", RED)
+            print_message(f"Link: {link}", RED)
+            print_message(f"Thời gian còn lại: {remaining} giây...", RED)
+            time.sleep(1)
+        
+        # Thực thi liên kết
+        print_message(f"[SUPHUMEO] Đang thực thi liên kết: {link}", RED)
+        os.system(f"curl {link}")  # Hoặc sử dụng lệnh khác để mở liên kết
 
 def main():
-    print("Chương trình yêu cầu mật khẩu để tiếp tục.")
-    if not check_password():
-        print("Mật khẩu không chính xác. Thoát chương trình.")
-        return
-
     while True:
-        print("\nChọn một tùy chọn:")
-        print("[1] Create Cron")
-        print("[2] Start Cron")
-        print("[3] Exit")
+        clear_console()
+        print_message(f"2.8: Cron Job Siêu Vip V1", RED)
+        print_message(f"2.9: Cron Job Siêu Vip V2", RED)
         
-        choice = input("Nhập lựa chọn của bạn: ")
+        choice = input("Nhập lựa chọn: ")
         
-        if choice == '1':
-            create_cron()
-        elif choice == '2':
-            start_cron()
-        elif choice == '3':
-            print("Thoát chương trình.")
-            break
-        else:
-            print("Lựa chọn không hợp lệ. Vui lòng thử lại.")
+        if choice == '2.8':
+            create_cron('V1')
+        
+        elif choice == '2.9':
+            sub_choice = input("1. CREATE CRON\n2. START CRON\nChọn: ")
+            if sub_choice == '1':
+                create_cron('V2')
+            elif sub_choice == '2':
+                start_cron()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
