@@ -47,8 +47,9 @@ def run_python_code_from_url(script_url):
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def print_message(message, color="\033[0m"):
-    print(f"{color}{message}\033[0m")
+def fast_print(message):
+    """Print message quickly to the console."""
+    print(message)
 
 def get_device_type():
     return "PC" if os.name == 'nt' else "MOBILE"
@@ -84,18 +85,11 @@ def load_config():
     except FileNotFoundError:
         return None
 
-def slow_print(message, delay=0.05):
-    """Print message slowly to the console."""
-    for char in message:
-        print(char, end='', flush=True)
-        time.sleep(delay)
-    print()
-
 def create_cron(version):
     link = input("LINK CẦN CHẠY: ")
     seconds = int(input("SỐ GIÂY: "))
     save_config(link, seconds, version)
-    slow_print("Cron job created and saved in config.json")
+    fast_print("Cron job created and saved in config.json")
 
     run_now = input("Bạn muốn chạy ngay bây giờ không? (Nhấn Enter để chạy, hoặc nhập bất kỳ để thoát): ")
     if run_now == "":
@@ -104,7 +98,7 @@ def create_cron(version):
 def start_cron():
     config = load_config()
     if not config:
-        slow_print("No cron job configuration found.")
+        fast_print("No cron job configuration found.")
         return
     
     link = config['link']
@@ -116,18 +110,18 @@ def start_cron():
         ip_address = get_ip_address()
         device_type = get_device_type()
 
-        slow_print(f"IP: {ip_address}")
-        slow_print(f"Thời gian hiện tại: {current_time}")
-        slow_print(f"Thiết bị: {device_type}")
+        fast_print(f"IP: {ip_address}")
+        fast_print(f"Thời gian hiện tại: {current_time}")
+        fast_print(f"Thiết bị: {device_type}")
 
         for remaining in range(seconds, 0, -1):
             clear_console()
-            slow_print(f"[SUPHUMEO] TRẠNG THÁI")
-            slow_print(f"Link: {link}")
-            slow_print(f"Thời gian còn lại: {remaining} giây...")
+            fast_print(f"[SUPHUMEO] TRẠNG THÁI")
+            fast_print(f"Link: {link}")
+            fast_print(f"Thời gian còn lại: {remaining} giây...")
             time.sleep(1)
         
-        slow_print(f"[SUPHUMEO] Đang thực thi liên kết: {link}")
+        fast_print(f"[SUPHUMEO] Đang thực thi liên kết: {link}")
         os.system(f"curl {link}")
 
 def main():
